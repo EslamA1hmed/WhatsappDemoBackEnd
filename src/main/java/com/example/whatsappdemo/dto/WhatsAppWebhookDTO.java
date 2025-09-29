@@ -233,13 +233,14 @@ public class WhatsAppWebhookDTO {
     }
 
     @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Pricing {
-        private String pricing_model;
-        private Double billable;
-        private String currency;
-    }
+@NoArgsConstructor
+@AllArgsConstructor
+public static class Pricing {
+    private String pricing_model;
+    private Boolean billable;   // ✅ Boolean مش Double
+    private String currency;    // ساعات بتكون مش موجودة
+}
+
 
     @Data
     @NoArgsConstructor
