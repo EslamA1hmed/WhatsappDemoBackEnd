@@ -5,14 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-@Data
 @Entity
-@Table(name = "messages")
+@Table(name = "messages_outgoing")
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,46 +22,59 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    
+    // ✅ Wamid اللي بيرجعه Meta بعد الإرسال
+    @Column(unique = true)
+    private String messageId;
+    private String status = "Not delverid";
+
     private String messagingProduct = "whatsapp";
 
+    // ✅ رقم المستقبل
     @Column(name = "`to`")
     private String to;
-    @Column(name = "recipient_type")
-    private String recipientType;
 
-    @Column(name = "`type`")
-    private String type;// text, image, video, document, template, interactive
+    private String recipientType = "individual";
+
+    // ✅ نوع الرسالة: text, template, image, video, document, audio...
+    private String type;
 
     @CreatedDate
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // ---------------- Relations ---------------- //
+    // =======================
+    // TEXT MESSAGE
+    @Column(columnDefinition = "TEXT")
+    private String textBody;
 
-    @Embedded
-    private MessageContext context;
+    // =======================
+    // TEMPLATE MESSAGE
+    private String templateName;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "text_id")
-    private MessageText text;
+    @Column(columnDefinition = "TEXT")
+    private String templateBody;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "image_id")
-    private MessageImage image;
+    private String templateHeader;
+    private String templateFooter;
+    private String templateHeaderMediaId;
+    private String templateHeaderMimeType;
+    private String templateHeaderFilename;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "document_id")
-    private MessageDocument document;
+    // =======================
+    // MEDIA MESSAGE
+    private String mediaId;
+     private String mediaUrl;
+    private String mimeType;
+    private String caption;
+    private String filename;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "video_id")
-    private MessageVideo video;
+    // =======================
+    // BUTTONS
+    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MessageButton> buttons;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "template_id")
-    private MessageTemplate template;
-
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "interactive_id")
-    private MessageInteractive interactive;
+    // =======================
+    // CONTEXT (reply to another outgoing msg if needed)
+    @ManyToOne
+    @JoinColumn(name = "context_message_id")
+    private Message contextMessage;
 }

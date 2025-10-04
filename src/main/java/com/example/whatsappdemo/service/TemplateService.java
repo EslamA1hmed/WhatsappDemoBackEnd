@@ -73,7 +73,6 @@ public class TemplateService {
                 HttpMethod.GET,
                 request,
                 WhatsAppTemplatesResponseDTO.class);
-
         return response.getBody(); // ده بيرجع Object فيه data + paging
     }
 public WhatsAppTemplatesResponseDTO.TemplateDTO getTemplateByName(String templateName) {

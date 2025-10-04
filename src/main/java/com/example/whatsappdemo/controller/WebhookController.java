@@ -1,8 +1,13 @@
 package com.example.whatsappdemo.controller;
 
 import com.example.whatsappdemo.dto.WhatsAppWebhookDTO;
+import com.example.whatsappdemo.entity.Message;
+import com.example.whatsappdemo.repo.MessageRepo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,6 +17,9 @@ public class WebhookController {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private MessageRepo messageRepo;
 
     // ✅ GET: Verification Step
     @GetMapping
@@ -35,6 +43,46 @@ public class WebhookController {
     // ✅ POST: Receive Webhook Events
     @PostMapping
     public void receiveWebhook(@RequestBody WhatsAppWebhookDTO webhookDTO) throws JsonProcessingException {
+        if (webhookDTO.getEntry() != null) {
+    for (WhatsAppWebhookDTO.Entry entry : webhookDTO.getEntry()) {
+        for (WhatsAppWebhookDTO.Change change : entry.getChanges()) {
+            WhatsAppWebhookDTO.Value value = change.getValue();
+
+            // ✅ لو فيه statuses يبقى ده تحديث حالة رسالة
+            if (value.getStatuses() != null && !value.getStatuses().isEmpty()) {
+                for (WhatsAppWebhookDTO.Status status : value.getStatuses()) {
+                    String messageId = status.getId();     // wamid
+                    String newStatus = status.getStatus(); // sent, delivered, read, failed
+
+                    int retries = 10; // أقصى عدد محاولات
+                    Message message = null;
+
+                    while (retries-- > 0) {
+                        Optional<Message> optionalMessage = messageRepo.findByMessageId(messageId);
+                        if (optionalMessage.isPresent()) {
+                            message = optionalMessage.get();
+                            break; // الرسالة لقيتها، اخرج من اللوب
+                        } else {
+                            try {
+                                Thread.sleep(500); // انتظر نصف ثانية قبل المحاولة التالية
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                break;
+                            }
+                        }
+                    }
+                    if (message != null) {
+                        message.setStatus(newStatus);
+                        messageRepo.save(message);
+                    } else {
+                        System.out.println("⚠️ Message " + messageId + " not found after retries!");
+                    }
+                }
+            }
+        }
+    }
+}
+
         System.out.println("📩 Received Webhook Event:");
         System.out.println(objectMapper.writeValueAsString(webhookDTO));
         // مفيش لزوم تبعت حاجة تانية، Spring بيرجع 200 OK تلقائي

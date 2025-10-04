@@ -63,7 +63,9 @@ public class WhatsAppTemplatesResponseDTO {
         @JsonProperty("autofill_text")
         private String autofillText; // لـ ONE_TAP
         @JsonProperty("package_name")
-        private String packageName; // لـ ONE_TAP
+        private String packageName;
+        @JsonProperty("phone_number") // لـ ONE_TAP
+        private String phoneNumber;
         @JsonProperty("signature_hash")
         private String signatureHash; // لـ ONE_TAP
     }

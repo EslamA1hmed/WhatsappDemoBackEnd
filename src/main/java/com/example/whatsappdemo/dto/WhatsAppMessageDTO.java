@@ -47,6 +47,7 @@ public class WhatsAppMessageDTO {
     @AllArgsConstructor
     public static class Image {
         private String link;
+        private String id;
         private String caption; // اختياري
     }
 
@@ -55,6 +56,7 @@ public class WhatsAppMessageDTO {
     @AllArgsConstructor
     public static class Document {
         private String link;
+        private String id;
         private String filename; // اختياري
     }
 
@@ -63,6 +65,7 @@ public class WhatsAppMessageDTO {
     @AllArgsConstructor
     public static class Video {
         private String link;
+        private String id;
         private String caption; // اختياري
     }
 

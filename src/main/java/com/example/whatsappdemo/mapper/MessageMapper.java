@@ -1,112 +1,290 @@
 package com.example.whatsappdemo.mapper;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.example.whatsappdemo.dto.MessageResponseDTO;
 import com.example.whatsappdemo.dto.WhatsAppMessageDTO;
-import com.example.whatsappdemo.entity.*;
+import com.example.whatsappdemo.dto.WhatsAppTemplatesResponseDTO;
+import com.example.whatsappdemo.entity.Message;
+import com.example.whatsappdemo.entity.MessageButton;
+import com.example.whatsappdemo.repo.MessageButtonsRepo;
+import com.example.whatsappdemo.service.TemplateService;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 public class MessageMapper {
 
-    public Message toEntity(WhatsAppMessageDTO dto) {
-    if (dto == null) return null;
+        @Autowired
+        private TemplateService templateService;
+        @Autowired
+        private MessageButtonsRepo messageButtonsRepo;
 
-    // ================== Basic Message ==================
-    Message message = Message.builder()
-            .messagingProduct(dto.getMessaging_product())
-            .to(dto.getTo())
-            .type(dto.getType())
-            .recipientType(dto.getRecipient_type())
-            .build();
+        public Message toEntity(WhatsAppMessageDTO dto) {
+                Message message = new Message();
 
-    // Context
-    if (dto.getContext() != null) {
-        message.setContext(new MessageContext(dto.getContext().getMessage_id()));
-    }
+                message.setType(dto.getType());
+                message.setRecipientType(dto.getRecipient_type());
+                message.setTo(dto.getTo());
 
-    // Document
-    if (dto.getDocument() != null) {
-        message.setDocument(MessageDocument.builder()
-                .filename(dto.getDocument().getFilename())
-                .link(dto.getDocument().getLink())
-                .build());
-    }
+                // ================= TEXT =================
+                if ("text".equalsIgnoreCase(dto.getType())) {
+                        if (dto.getText() != null) {
+                                message.setTextBody(dto.getText().getBody());
+                        }
+                }
 
-    // Text
-    if (dto.getText() != null) {
-        message.setText(MessageText.builder()
-                .body(dto.getText().getBody())
-                .previewUrl(dto.getText().isPreview_url())
-                .build());
-    }
+                // ================= IMAGE =================
+                else if ("image".equalsIgnoreCase(dto.getType())) {
+                        if (dto.getImage() != null) {
+                                message.setCaption(dto.getImage().getCaption());
+                                message.setMediaId(dto.getImage().getId());
+                                message.setMediaUrl(dto.getImage().getLink());
+                                if (dto.getImage().getLink() != null) {
+                                        message.setMimeType("image/jpeg");
+                                }
+                        }
+                }
 
-    // Image
-    if (dto.getImage() != null) {
-        message.setImage(MessageImage.builder()
-                .caption(dto.getImage().getCaption())
-                .link(dto.getImage().getLink())
-                .build());
-    }
+                // ================= TEMPLATE =================
+                else if ("template".equalsIgnoreCase(dto.getType()) && dto.getTemplate() != null) {
+                        message.setTemplateName(dto.getTemplate().getName());
+                        List<MessageButton> buttonEntities = new ArrayList<>();
+                        // ✅ هات الـ template الأصلي من Meta
+                        WhatsAppTemplatesResponseDTO.TemplateDTO templateFromMeta = templateService
+                                        .getTemplateByName(dto.getTemplate().getName());
+                        if (templateFromMeta.getCategory().equalsIgnoreCase("AUTHENTICATION")) {
+                                String body = dto.getTemplate().getComponents().get(0).getParameters().get(0).getText()
+                                                + " is your verification code";
+                                if (templateFromMeta.getComponents().get(0).getAddSecurityRecommendation()) {
+                                        body += " For your security, do not share this code.";
+                                }
+                                message.setTemplateBody(body);
 
-    // ================== Template ==================
-    if (dto.getTemplate() != null) {
-        MessageTemplate template = MessageTemplate.builder()
-                .name(dto.getTemplate().getName())
-                .language(dto.getTemplate().getLanguage() != null
-                        ? TemplateLanguage.builder()
-                                .code(dto.getTemplate().getLanguage().getCode())
-                                .build()
-                        : null)
-                .build();
+                                if (templateFromMeta.getComponents().size() > 1) {
 
-        // Components mapping
-        if (dto.getTemplate().getComponents() != null) {
-            List<MessageTemplateComponent> components = dto.getTemplate().getComponents().stream()
-                    .map(cdto -> {
-                        MessageTemplateComponent comp = MessageTemplateComponent.builder()
-                                .type(cdto.getType())
-                                .build();
-
-                        // Parameters mapping
-                        if (cdto.getParameters() != null) {
-                            List<MessageTemplateParameter> params = cdto.getParameters().stream()
-                                    .map(p -> {
-                                        MessageTemplateParameter param = MessageTemplateParameter.builder()
-                                                .type(p.getType())
-                                                .text(p.getText())
-                                                .documentFilename(p.getDocument() != null ? p.getDocument().getFilename() : null)
-                                                .documentLink(p.getDocument() != null ? p.getDocument().getLink() : null)
-                                                .imageCaption(p.getImage() != null ? p.getImage().getCaption() : null)
-                                                .imageLink(p.getImage() != null ? p.getImage().getLink() : null)
-                                                .videoCaption(p.getVideo() != null ? p.getVideo().getCaption() : null)
-                                                .videoLink(p.getVideo() != null ? p.getVideo().getLink() : null)
-                                                .build();
-
-                                        // 🔗 ربط parameter بالـ component
-                                        param.setComponent(comp);
-                                        return param;
-                                    })
-                                    .collect(Collectors.toList());
-
-                            comp.setParameters(params);
+                                        message.setTemplateFooter(
+                                                        "This code expires in "
+                                                                        + templateFromMeta.getComponents().get(1)
+                                                                                        .getCodeExpirationMinutes()
+                                                                        + " minutes");
+                                }
+                                Optional<WhatsAppTemplatesResponseDTO.ComponentDTO> component = templateFromMeta
+                                                .getComponents().stream()
+                                                .filter(c -> c.getType().equalsIgnoreCase("Buttons")).findFirst();
+                                if (component.isPresent()) {
+                                        buttonEntities.add(MessageButton.builder()
+                                                        .type(component.get().getButtons().get(0).getType())
+                                                        .text(component.get().getButtons().get(0).getText()).build());
+                                        buttonEntities.forEach(b -> b.setMessage(message));
+                                        message.setButtons(buttonEntities);
+                                }
+                                return message;
                         }
 
-                        // 🔗 ربط component بالـ template
-                        comp.setTemplate(template);
-                        return comp;
-                    })
-                    .collect(Collectors.toList());
+                        // لوب على الـ components من Meta (الأساسية)
+                        for (WhatsAppTemplatesResponseDTO.ComponentDTO componentFromMeta : templateFromMeta
+                                        .getComponents()) {
+                                String type = componentFromMeta.getType().toUpperCase();
 
-            template.setComponents(components);
+                                switch (type) {
+                                        case "HEADER":
+                                                if ("TEXT".equalsIgnoreCase(componentFromMeta.getFormat())) {
+                                                        String headerText = componentFromMeta.getText();
+                                                        // شوف لو في parameter جاي من dto
+                                                        Optional<WhatsAppMessageDTO.Template.Component> headerComponent = dto
+                                                                        .getTemplate().getComponents().stream()
+                                                                        .filter(c -> "header"
+                                                                                        .equalsIgnoreCase(c.getType()))
+                                                                        .findFirst();
+
+                                                        if (headerComponent.isPresent() && headerComponent.get()
+                                                                        .getParameters() != null) {
+                                                                WhatsAppMessageDTO.Template.Parameter param = headerComponent
+                                                                                .get().getParameters().get(0);
+                                                                if ("text".equalsIgnoreCase(param.getType())) {
+                                                                        headerText = headerText.replace("{{1}}",
+                                                                                        param.getText());
+                                                                }
+                                                        }
+                                                        message.setTemplateHeader(headerText);
+                                                }
+                                                break;
+
+                                        case "BODY":
+                                                String bodyText = componentFromMeta.getText();
+                                                Optional<WhatsAppMessageDTO.Template.Component> bodyComponent = dto
+                                                                .getTemplate().getComponents().stream()
+                                                                .filter(c -> "body".equalsIgnoreCase(c.getType()))
+                                                                .findFirst();
+
+                                                if (bodyComponent.isPresent()
+                                                                && bodyComponent.get().getParameters() != null) {
+                                                        int index = 1;
+                                                        for (WhatsAppMessageDTO.Template.Parameter param : bodyComponent
+                                                                        .get().getParameters()) {
+                                                                if ("text".equalsIgnoreCase(param.getType())) {
+                                                                        bodyText = bodyText.replace("{{" + index + "}}",
+                                                                                        param.getText());
+                                                                }
+                                                                index++;
+                                                        }
+                                                }
+                                                message.setTemplateBody(bodyText);
+                                                break;
+
+                                        case "FOOTER":
+                                                message.setTemplateFooter(componentFromMeta.getText());
+                                                break;
+
+                                        case "BUTTONS":
+                                                componentFromMeta.getButtons().forEach(buttonFromMeta -> {
+                                                        String btnType = buttonFromMeta.getType().toUpperCase();
+                                                        String buttonText = buttonFromMeta.getText();
+
+                                                        switch (btnType) {
+                                                                case "QUICK_REPLY":
+                                                                        String payload = null;
+                                                                        Optional<WhatsAppMessageDTO.Template.Component> quickReplyComponent = dto
+                                                                                        .getTemplate().getComponents()
+                                                                                        .stream()
+                                                                                        .filter(c -> "button"
+                                                                                                        .equalsIgnoreCase(
+                                                                                                                        c.getType())
+                                                                                                        &&
+                                                                                                        "quick_reply".equalsIgnoreCase(
+                                                                                                                        c.getSub_type()))
+                                                                                        .findFirst();
+                                                                        if (quickReplyComponent.isPresent() &&
+                                                                                        quickReplyComponent.get()
+                                                                                                        .getParameters() != null
+                                                                                        &&
+                                                                                        !quickReplyComponent.get()
+                                                                                                        .getParameters()
+                                                                                                        .isEmpty()) {
+                                                                                payload = quickReplyComponent.get()
+                                                                                                .getParameters().get(0)
+                                                                                                .getText();
+                                                                        }
+
+                                                                        buttonEntities.add(MessageButton.builder()
+                                                                                        .type("QUICK_REPLY")
+                                                                                        .text(buttonText)
+                                                                                        .payload(payload)
+                                                                                        .message(message)
+                                                                                        .build());
+                                                                        break;
+
+                                                                case "PHONE_NUMBER":
+                                                                        String phone = null;
+                                                                        Optional<WhatsAppMessageDTO.Template.Component> callComponent = dto
+                                                                                        .getTemplate().getComponents()
+                                                                                        .stream()
+                                                                                        .filter(c -> "button"
+                                                                                                        .equalsIgnoreCase(
+                                                                                                                        c.getType())
+                                                                                                        &&
+                                                                                                        "phone_number".equalsIgnoreCase(
+                                                                                                                        c.getSub_type()))
+                                                                                        .findFirst();
+                                                                        if (callComponent.isPresent() &&
+                                                                                        callComponent.get()
+                                                                                                        .getParameters() != null
+                                                                                        &&
+                                                                                        !callComponent.get()
+                                                                                                        .getParameters()
+                                                                                                        .isEmpty()) {
+                                                                                phone = callComponent.get()
+                                                                                                .getParameters().get(0)
+                                                                                                .getText();
+                                                                        }
+
+                                                                        buttonEntities.add(MessageButton.builder()
+                                                                                        .type("CALL")
+                                                                                        .text(buttonText)
+                                                                                        .phoneNumber(phone)
+                                                                                        .message(message)
+                                                                                        .build());
+                                                                        break;
+
+                                                                case "URL":
+                                                                        String finalUrl = buttonFromMeta.getUrl();
+                                                                        Optional<WhatsAppMessageDTO.Template.Component> urlComponent = dto
+                                                                                        .getTemplate().getComponents()
+                                                                                        .stream()
+                                                                                        .filter(c -> "button"
+                                                                                                        .equalsIgnoreCase(
+                                                                                                                        c.getType())
+                                                                                                        &&
+                                                                                                        "url".equalsIgnoreCase(
+                                                                                                                        c.getSub_type()))
+                                                                                        .findFirst();
+                                                                        if (urlComponent.isPresent() &&
+                                                                                        urlComponent.get()
+                                                                                                        .getParameters() != null
+                                                                                        &&
+                                                                                        !urlComponent.get()
+                                                                                                        .getParameters()
+                                                                                                        .isEmpty()) {
+                                                                                String param = urlComponent.get()
+                                                                                                .getParameters().get(0)
+                                                                                                .getText();
+                                                                                if (param != null && !param.isEmpty()) {
+                                                                                        finalUrl = finalUrl.replace(
+                                                                                                        "{{1}}", param);
+                                                                                }
+                                                                        }
+
+                                                                        buttonEntities.add(MessageButton.builder()
+                                                                                        .type("URL")
+                                                                                        .text(buttonText)
+                                                                                        .url(finalUrl)
+                                                                                        .message(message)
+                                                                                        .build());
+                                                                        break;
+                                                        }
+                                                });
+                                                break;
+                                }
+                        }
+
+                        buttonEntities.forEach(b -> b.setMessage(message));
+                        message.setButtons(buttonEntities);
+                }
+                return message;
         }
 
-        message.setTemplate(template);
-    }
-
-    return message;
-}
-
+        public static MessageResponseDTO fromEntity(Message message) {
+                return MessageResponseDTO.builder()
+                                .id(message.getId())
+                                .messageId(message.getMessageId())
+                                .status(message.getStatus())
+                                .to(message.getTo())
+                                .type(message.getType())
+                                .textBody(message.getTextBody())
+                                .templateName(message.getTemplateName())
+                                .templateBody(message.getTemplateBody())
+                                .templateHeader(message.getTemplateHeader())
+                                .templateFooter(message.getTemplateFooter())
+                                .mediaId(message.getMediaId())
+                                .mediaUrl(message.getMediaUrl())
+                                .mimeType(message.getMimeType())
+                                .caption(message.getCaption())
+                                .filename(message.getFilename())
+                                .buttons(
+                                                message.getButtons() == null ? null
+                                                                : message.getButtons().stream()
+                                                                                .map(b -> new MessageResponseDTO.ButtonDTO(
+                                                                                                b.getType(),
+                                                                                                b.getText(),
+                                                                                                b.getPayload(),
+                                                                                                b.getUrl(),
+                                                                                                b.getPhoneNumber()))
+                                                                                .collect(Collectors.toList()))
+                                .build();
+        }
 }
