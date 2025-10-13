@@ -28,7 +28,7 @@ public class TemplateStatusScheduler {
     private TemplateRepo templateRepo;
 
     // كل ساعة بالضبط
-    @Scheduled(fixedRate = 3600000L)
+    @Scheduled(fixedRate = 360000000L)
     public void updateTemplateStatuses() {
         System.out.println("🔄 Running template status updater...");
 

@@ -11,7 +11,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "messages_outgoing")
+@Table(name = "messages_outgoing",
+indexes = {
+        @Index(name = "idx_message_message_id", columnList = "messageId")
+    })
 @Data
 @Builder
 @NoArgsConstructor
@@ -32,6 +35,9 @@ public class Message {
     // ✅ رقم المستقبل
     @Column(name = "`to`")
     private String to;
+     @Column(name = "`from`")
+    private String from;
+
 
     private String recipientType = "individual";
 
@@ -74,7 +80,6 @@ public class Message {
 
     // =======================
     // CONTEXT (reply to another outgoing msg if needed)
-    @ManyToOne
-    @JoinColumn(name = "context_message_id")
-    private Message contextMessage;
+    @Embedded
+    private MessageContext contextMessage;
 }

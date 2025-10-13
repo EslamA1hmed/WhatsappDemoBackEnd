@@ -31,7 +31,7 @@ public class WhatsAppMessageDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Context {
-        private String message_id; // ID للرسالة اللي بيرد عليها
+        private String message_id;
     }
 
     @Data

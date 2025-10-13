@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class MessageContext {
-    private String message_id;
+
+    private String contextFrom;
+    private String contextMessageId;
 
 }

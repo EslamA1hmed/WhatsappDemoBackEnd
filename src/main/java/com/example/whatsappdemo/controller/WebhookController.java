@@ -1,8 +1,11 @@
 package com.example.whatsappdemo.controller;
 
+import com.example.whatsappdemo.dto.StatusDTO;
 import com.example.whatsappdemo.dto.WhatsAppWebhookDTO;
 import com.example.whatsappdemo.entity.Message;
 import com.example.whatsappdemo.repo.MessageRepo;
+import com.example.whatsappdemo.service.IncomingMessageService;
+import com.example.whatsappdemo.service.RealTimeNotifierService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -20,6 +23,11 @@ public class WebhookController {
 
     @Autowired
     private MessageRepo messageRepo;
+     @Autowired 
+    private RealTimeNotifierService realTimeNotifierService;
+
+    @Autowired 
+    private IncomingMessageService incomingMessageService;
 
     // ✅ GET: Verification Step
     @GetMapping
@@ -48,7 +56,6 @@ public class WebhookController {
         for (WhatsAppWebhookDTO.Change change : entry.getChanges()) {
             WhatsAppWebhookDTO.Value value = change.getValue();
 
-            // ✅ لو فيه statuses يبقى ده تحديث حالة رسالة
             if (value.getStatuses() != null && !value.getStatuses().isEmpty()) {
                 for (WhatsAppWebhookDTO.Status status : value.getStatuses()) {
                     String messageId = status.getId();     // wamid
@@ -74,10 +81,13 @@ public class WebhookController {
                     if (message != null) {
                         message.setStatus(newStatus);
                         messageRepo.save(message);
+                        realTimeNotifierService.notifyMessageStatus(new StatusDTO(newStatus,messageId), message.getTo());
                     } else {
                         System.out.println("⚠️ Message " + messageId + " not found after retries!");
                     }
                 }
+            }else if(value.getMessages()!=null){
+                System.out.println(incomingMessageService.saveMessage(webhookDTO));
             }
         }
     }

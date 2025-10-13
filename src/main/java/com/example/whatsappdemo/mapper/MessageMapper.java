@@ -8,6 +8,7 @@ import com.example.whatsappdemo.dto.WhatsAppMessageDTO;
 import com.example.whatsappdemo.dto.WhatsAppTemplatesResponseDTO;
 import com.example.whatsappdemo.entity.Message;
 import com.example.whatsappdemo.entity.MessageButton;
+import com.example.whatsappdemo.entity.MessageContext;
 import com.example.whatsappdemo.repo.MessageButtonsRepo;
 import com.example.whatsappdemo.service.TemplateService;
 
@@ -30,6 +31,10 @@ public class MessageMapper {
                 message.setType(dto.getType());
                 message.setRecipientType(dto.getRecipient_type());
                 message.setTo(dto.getTo());
+                if(dto.getContext()!=null){
+                message.setContextMessage(new MessageContext( "15",dto.getContext().getMessage_id()));
+                }
+                message.setFrom(null);
 
                 // ================= TEXT =================
                 if ("text".equalsIgnoreCase(dto.getType())) {
@@ -261,10 +266,15 @@ public class MessageMapper {
         public static MessageResponseDTO fromEntity(Message message) {
                 return MessageResponseDTO.builder()
                                 .id(message.getId())
+                                .direction("SENT")
+                                .createdAt(message.getCreatedAt())
                                 .messageId(message.getMessageId())
                                 .status(message.getStatus())
+                                .from(message.getFrom())
                                 .to(message.getTo())
                                 .type(message.getType())
+                                .contextMessageId(message.getContextMessage()!=null?message.getContextMessage().getContextMessageId():null)
+                                .contextFrom(message.getContextMessage()!=null?message.getContextMessage().getContextFrom():null)
                                 .textBody(message.getTextBody())
                                 .templateName(message.getTemplateName())
                                 .templateBody(message.getTemplateBody())

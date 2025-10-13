@@ -4,13 +4,20 @@ import com.example.whatsappdemo.dto.MessageResponseDTO;
 import com.example.whatsappdemo.dto.MessagesStatisticsDTO;
 import com.example.whatsappdemo.dto.WhatsAppMessageDTO;
 import com.example.whatsappdemo.dto.WhatsAppMessageResponse;
+import com.example.whatsappdemo.entity.Contact;
 import com.example.whatsappdemo.entity.Message;
+import com.example.whatsappdemo.entity.MessageChat;
+import com.example.whatsappdemo.enums.MessageType;
 import com.example.whatsappdemo.mapper.MessageMapper;
+import com.example.whatsappdemo.repo.ContactRepo;
+import com.example.whatsappdemo.repo.MessageChatRepo;
 // import com.example.whatsappdemo.mapper.MessageMapper;
 import com.example.whatsappdemo.repo.MessageRepo;
 import com.example.whatsappdemo.repo.TemplateRepo;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +36,11 @@ public class MessageService {
     @Value("${whatsapp.api.token}")
     private String apiToken;
 
+    @Autowired
+    private MessageChatRepo messageChatRepo;
+    @Autowired 
+    private RealTimeNotifierService realTimeNotifierService;
+
     // @Autowired
     // private MessageMapper messageMapper;
 
@@ -38,6 +50,9 @@ public class MessageService {
     private TemplateRepo templateRepo;
     @Autowired
     private MessageMapper messageMapper;
+     @Autowired
+    private ContactRepo contactRepo;
+
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -58,9 +73,20 @@ public class MessageService {
                 HttpMethod.POST,
                 request,
                 WhatsAppMessageResponse.class);
-        Message message = messageMapper.toEntity(dto);
+                Optional<Contact> contact = contactRepo.findByPhoneNumber(dto.getTo());
+            if (contact.isPresent()) {
+                contact.get().setLastMessage(LocalDateTime.now());
+                contactRepo.save(contact.get());
+            } else {
+                contactRepo.save(Contact.builder().name(dto.getTo())
+                        .phoneNumber(dto.getTo()).lastMessage(LocalDateTime.now()).build());
+            }
+        Message message = messageMapper.toEntity(dto);        
         message.setMessageId(response.getBody().getMessages().get(0).getId());
         messageRepo.save(message);
+        messageChatRepo.save(MessageChat.builder().messageRefId(message.getMessageId()).messageType(MessageType.OUTGOING).
+        receiver(message.getTo()).sender(message.getFrom()).build());
+        realTimeNotifierService.notifyNewMessage(messageMapper.fromEntity(message), dto.getTo());
         return response.getBody();
     }
 
