@@ -14,6 +14,7 @@ import java.util.List;
 @Table(name = "messages_outgoing",
 indexes = {
         @Index(name = "idx_message_message_id", columnList = "messageId")
+        ,@Index(name = "idx_to", columnList = "to")
     })
 @Data
 @Builder

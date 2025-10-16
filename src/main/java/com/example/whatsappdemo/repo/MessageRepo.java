@@ -22,7 +22,10 @@ public interface MessageRepo extends JpaRepository<Message, Long> {
 
     Page<Message> findAllByOrderByCreatedAtDesc(Pageable pageable);
     @Query("select new com.example.whatsappdemo.dto.MessagesStatisticsDTO(m.status,count(m)) from Message m Group by m.status")
-    List<MessagesStatisticsDTO> findStatisticsDTO();
+    List<MessagesStatisticsDTO> getMessagesStatistics();
+
+    @Query("select new com.example.whatsappdemo.dto.MessagesStatisticsDTO(m.status,count(m)) from Message m where m.to = :phoneNumber Group by m.status")
+    List<MessagesStatisticsDTO> getMessagesStatistics(String phoneNumber);
 
     // ✅ جلب الرسائل مع رقم معين
     @Query("SELECT m FROM Message m WHERE m.to = :phoneNumber ORDER BY m.createdAt DESC")

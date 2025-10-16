@@ -20,7 +20,7 @@ indexes = {
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MessageChat {
+public class AllMessages {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

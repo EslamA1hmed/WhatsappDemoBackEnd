@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Table(name = "messages_incoming",
 indexes = {
         @Index(name = "idx_message_message_id", columnList = "messageId")
+        ,@Index(name = "idx_from", columnList = "from")
     })
 @Data
 @Builder
@@ -41,6 +42,8 @@ public class IncomingMessage {
 
     // ✅ وقت الاستلام من WhatsApp
     private String timestamp;
+
+    private String status;
 
     // ✅ تاريخ الإدخال في النظام
     @CreatedDate

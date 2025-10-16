@@ -2,6 +2,9 @@ package com.example.whatsappdemo.controller;
 
 import com.example.whatsappdemo.dto.MessageResponseDTO;
 import com.example.whatsappdemo.service.ChatService;
+
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +18,11 @@ public class ChatController {
     private ChatService chatService;
 
     @GetMapping
-    public ResponseEntity<Page<MessageResponseDTO>> getAllMessages(
+    public ResponseEntity<List<MessageResponseDTO>> getAllMessages(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        return ResponseEntity.ok(chatService.getMessages(page, size));
+        return ResponseEntity.ok(chatService.getMessages());
     }
 
     @GetMapping("/contact/{phoneNumber}")

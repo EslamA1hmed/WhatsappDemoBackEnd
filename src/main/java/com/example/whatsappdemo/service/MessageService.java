@@ -6,11 +6,11 @@ import com.example.whatsappdemo.dto.WhatsAppMessageDTO;
 import com.example.whatsappdemo.dto.WhatsAppMessageResponse;
 import com.example.whatsappdemo.entity.Contact;
 import com.example.whatsappdemo.entity.Message;
-import com.example.whatsappdemo.entity.MessageChat;
+import com.example.whatsappdemo.entity.AllMessages;
 import com.example.whatsappdemo.enums.MessageType;
 import com.example.whatsappdemo.mapper.MessageMapper;
 import com.example.whatsappdemo.repo.ContactRepo;
-import com.example.whatsappdemo.repo.MessageChatRepo;
+import com.example.whatsappdemo.repo.AllMessagesRepo;
 // import com.example.whatsappdemo.mapper.MessageMapper;
 import com.example.whatsappdemo.repo.MessageRepo;
 import com.example.whatsappdemo.repo.TemplateRepo;
@@ -37,7 +37,7 @@ public class MessageService {
     private String apiToken;
 
     @Autowired
-    private MessageChatRepo messageChatRepo;
+    private AllMessagesRepo messageChatRepo;
     @Autowired 
     private RealTimeNotifierService realTimeNotifierService;
 
@@ -84,7 +84,7 @@ public class MessageService {
         Message message = messageMapper.toEntity(dto);        
         message.setMessageId(response.getBody().getMessages().get(0).getId());
         messageRepo.save(message);
-        messageChatRepo.save(MessageChat.builder().messageRefId(message.getMessageId()).messageType(MessageType.OUTGOING).
+        messageChatRepo.save(AllMessages.builder().messageRefId(message.getMessageId()).messageType(MessageType.OUTGOING).
         receiver(message.getTo()).sender(message.getFrom()).build());
         realTimeNotifierService.notifyNewMessage(messageMapper.fromEntity(message), dto.getTo());
         return response.getBody();
@@ -97,6 +97,7 @@ public class MessageService {
     }
 
     public List<MessagesStatisticsDTO> findMessagesStatistics() {
-        return messageRepo.findStatisticsDTO();
+        return messageRepo.getMessagesStatistics();
     }
+
 }

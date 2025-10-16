@@ -10,7 +10,7 @@ import com.example.whatsappdemo.dto.StatusDTO;
 @Service
 public class RealTimeNotifierService {
 
-    @Autowired
+ @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
     private String getChatTopic(String phoneNumber) {
@@ -21,8 +21,14 @@ public class RealTimeNotifierService {
         return "/topic/status/" + phoneNumber;
     }
 
-    public void notifyNewMessage(MessageResponseDTO messageDto, String phoneNumber) {
-        messagingTemplate.convertAndSend(getChatTopic(phoneNumber), messageDto);
+    // ✅ بعت notification للمستقبل
+    public void notifyNewMessage(MessageResponseDTO messageDto, String recipientPhone) {
+        messagingTemplate.convertAndSend(getChatTopic(recipientPhone), messageDto);
+    }
+
+    // ✅ NEW: بعت notification للمرسل كمان
+    public void notifyMessageSent(MessageResponseDTO messageDto, String senderPhone) {
+        messagingTemplate.convertAndSend(getChatTopic(senderPhone), messageDto);
     }
 
     public void notifyMessageStatus(StatusDTO statusDto, String phoneNumber) {

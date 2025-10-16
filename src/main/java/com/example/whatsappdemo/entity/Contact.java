@@ -31,6 +31,8 @@ public class Contact {
 
     private String name;
 
+    private Long unread;
+
     @CreatedDate
     private LocalDateTime createdAt = LocalDateTime.now();
     

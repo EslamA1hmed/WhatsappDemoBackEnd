@@ -30,6 +30,7 @@ public class IncomingMessageMapper {
                     incoming.setTimestamp(msg.getTimestamp());
                     incoming.setType(msg.getType());
                     incoming.setTo(value.getMetadata().getDisplay_phone_number());
+                    incoming.setStatus("unread");
 
                     switch (msg.getType()) {
                         case "text" -> mapTextMessage(msg, incoming);
@@ -135,6 +136,7 @@ public class IncomingMessageMapper {
                 .filename(entity.getFilename())
                 .contextMessageId(entity.getContextMessageId())
                 .contextFrom(entity.getContextFrom())
+                .status(entity.getStatus())
                 .build();
     }
 }
