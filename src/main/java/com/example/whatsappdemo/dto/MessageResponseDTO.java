@@ -18,9 +18,9 @@ public class MessageResponseDTO {
     private String messageId;
     private String direction; // SENT or RECEIVED
     private String status;
-    private String to;   // الشخص التاني (بدلاً من to)
+    private String to; // الشخص التاني (بدلاً من to)
     private String from;
-    private String type;      // text, template, media
+    private String type; // text, template, media
     private String textBody;
     private LocalDateTime createdAt;
 
@@ -36,6 +36,9 @@ public class MessageResponseDTO {
     private String mediaUrl;
     private String caption;
     private String filename;
+    private String thumbnail; // ✅ أضف هذا الحقل
+    private Integer width;
+    private Integer height;
 
     // CONTEXT (لو الرسالة رد على رسالة تانية)
     private String contextMessageId;
@@ -49,10 +52,10 @@ public class MessageResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ButtonDTO {
-        private String type;        // quick_reply, url, call
-        private String text;        // نص الزرار
-        private String payload;     // القيمة لو quick_reply
-        private String url;         // لو زرار URL
+        private String type; // quick_reply, url, call
+        private String text; // نص الزرار
+        private String payload; // القيمة لو quick_reply
+        private String url; // لو زرار URL
         private String phoneNumber; // لو زرار Call
     }
 }

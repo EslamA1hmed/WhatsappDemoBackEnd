@@ -15,10 +15,14 @@ import com.example.whatsappdemo.repo.AllMessagesRepo;
 import com.example.whatsappdemo.repo.MessageRepo;
 import com.example.whatsappdemo.repo.TemplateRepo;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -52,7 +56,10 @@ public class MessageService {
     private MessageMapper messageMapper;
      @Autowired
     private ContactRepo contactRepo;
+    private static final Logger logger = LoggerFactory.getLogger(IncomingMessageService.class);
 
+    @Autowired
+    private MediaService mediaService;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -83,6 +90,21 @@ public class MessageService {
             }
         Message message = messageMapper.toEntity(dto);        
         message.setMessageId(response.getBody().getMessages().get(0).getId());
+        
+        if ("image".equals(message.getType()) && message.getMediaId() != null) {
+                try {
+                    byte[] imageData = mediaService.downloadMedia(message.getMediaId());
+                    Map<String, Object> imageDetails = mediaService.processImage(imageData);
+                    
+                    message.setWidth((Integer) imageDetails.get("width"));
+                    message.setHeight((Integer) imageDetails.get("height"));
+                    message.setThumbnail((String) imageDetails.get("thumbnail"));
+
+                } catch (IOException e) {
+                    logger.error("Failed to process sending image with mediaId: {}", message.getMediaId(), e);
+                    // يمكنك ترك الحقول فارغة والمتابعة
+                }
+            }
         messageRepo.save(message);
         messageChatRepo.save(AllMessages.builder().messageRefId(message.getMessageId()).messageType(MessageType.OUTGOING).
         receiver(message.getTo()).sender(message.getFrom()).build());

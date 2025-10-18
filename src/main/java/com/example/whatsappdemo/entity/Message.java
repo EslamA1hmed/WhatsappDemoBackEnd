@@ -14,7 +14,7 @@ import java.util.List;
 @Table(name = "messages_outgoing",
 indexes = {
         @Index(name = "idx_message_message_id", columnList = "messageId")
-        ,@Index(name = "idx_to", columnList = "to")
+        ,@Index(name = "idx_to", columnList = "`to`")
     })
 @Data
 @Builder
@@ -69,10 +69,16 @@ public class Message {
     // =======================
     // MEDIA MESSAGE
     private String mediaId;
-     private String mediaUrl;
+    private String mediaUrl;
     private String mimeType;
     private String caption;
     private String filename;
+    @Column(columnDefinition = "TEXT")
+    private String thumbnail; // لتخزين Base64 string
+
+    private Integer width;
+
+    private Integer height;
 
     // =======================
     // BUTTONS

@@ -31,8 +31,8 @@ public class MessageMapper {
                 message.setType(dto.getType());
                 message.setRecipientType(dto.getRecipient_type());
                 message.setTo(dto.getTo());
-                if(dto.getContext()!=null){
-                message.setContextMessage(new MessageContext( "15",dto.getContext().getMessage_id()));
+                if (dto.getContext() != null) {
+                        message.setContextMessage(new MessageContext("15", dto.getContext().getMessage_id()));
                 }
                 message.setFrom(null);
 
@@ -49,7 +49,7 @@ public class MessageMapper {
                                 message.setCaption(dto.getImage().getCaption());
                                 message.setMediaId(dto.getImage().getId());
                                 message.setMediaUrl(dto.getImage().getLink());
-                                if (dto.getImage().getLink() != null) {
+                                if (dto.getImage().getLink() != null || dto.getImage().getId() != null) {
                                         message.setMimeType("image/jpeg");
                                 }
                         }
@@ -273,8 +273,12 @@ public class MessageMapper {
                                 .from(message.getFrom())
                                 .to(message.getTo())
                                 .type(message.getType())
-                                .contextMessageId(message.getContextMessage()!=null?message.getContextMessage().getContextMessageId():null)
-                                .contextFrom(message.getContextMessage()!=null?message.getContextMessage().getContextFrom():null)
+                                .contextMessageId(message.getContextMessage() != null
+                                                ? message.getContextMessage().getContextMessageId()
+                                                : null)
+                                .contextFrom(message.getContextMessage() != null
+                                                ? message.getContextMessage().getContextFrom()
+                                                : null)
                                 .textBody(message.getTextBody())
                                 .templateName(message.getTemplateName())
                                 .templateBody(message.getTemplateBody())
@@ -285,6 +289,9 @@ public class MessageMapper {
                                 .mimeType(message.getMimeType())
                                 .caption(message.getCaption())
                                 .filename(message.getFilename())
+                                .height(message.getHeight())
+                                .width(message.getWidth())
+                                .thumbnail(message.getThumbnail())
                                 .buttons(
                                                 message.getButtons() == null ? null
                                                                 : message.getButtons().stream()

@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Table(name = "messages_incoming",
 indexes = {
         @Index(name = "idx_message_message_id", columnList = "messageId")
-        ,@Index(name = "idx_from", columnList = "from")
+        ,@Index(name = "idx_from", columnList = "`from`")
     })
 @Data
 @Builder
@@ -61,6 +61,12 @@ public class IncomingMessage {
     private String sha256;
     private String caption;
     private String filename;
+    @Column(columnDefinition = "TEXT")
+    private String thumbnail; // لتخزين Base64 string
+
+    private Integer width;
+
+    private Integer height;
 
     // =========================
     // LOCATION MESSAGE
